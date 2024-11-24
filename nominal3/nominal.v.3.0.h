@@ -117,8 +117,9 @@ struct Shared_Datum
 {
 	std::unordered_map<size_t, size_t> pools;
 	std::unordered_map<size_t, T> data;
+	size_t count = 0;
 
-	T& operator [] (size_t token)
+	T& operator [] (size_t& token)
 	{
 		static T invalid;
 		if (!pools.contains(token)) return invalid;
@@ -199,27 +200,27 @@ struct Token
 		static size_t count;
 		self = ++count;
 	}
-	Token(size_t id) : self(id) {};
+	Token(size_t& id) : self(id) {};
 #pragma endregion
 #pragma region Datum stuffs
 	// Much like the behaviors, all of the datum stuffs is the same here as well.
 	template<class T>
-	T& operator [] (Datum<T> idatum)
+	T& operator [] (Datum<T>& idatum)
 	{
 		return idatum[self];
 	}
 	template<class T>
-	T& operator [] (Solitary_Datum<T> idatum)
+	T& operator [] (Solitary_Datum<T>& idatum)
 	{
 		return idatum[self];
 	}
 	template<class T>
-	T& operator [] (Shared_Datum<T> idatum)
+	T& operator [] (Shared_Datum<T>& idatum)
 	{
 		return idatum[self];
 	}
 	template<class T>
-	T& operator [] (Static_Datum<T> idatum)
+	T& operator [] (Static_Datum<T>& idatum)
 	{
 		return idatum[self];
 	}
@@ -245,12 +246,12 @@ struct Token
 #pragma region Datums
 #pragma region Datum
 template<class T>
-T& operator + (size_t token, Datum<T> datum)
+T& operator + (size_t& token, Datum<T>& datum)
 {// Adding datums to tokens with: token + datum = value;
 	return datum.data[token];
 }
 template <class T>
-T operator - (size_t token, Datum<T> datum)
+T operator - (size_t& token, Datum<T>& datum)
 {// remove datums from tokens with: optional_value = token - datum;
 	T val = datum[token];
 	datum.data.erase(token);
@@ -259,12 +260,12 @@ T operator - (size_t token, Datum<T> datum)
 #pragma endregion
 #pragma region Static Datums
 template<class T>
-void operator += (size_t token, Static_Datum<T> datum)
+void operator += (size_t& token, Static_Datum<T>& datum)
 {// Adding a token to a static datum
 	datum.tokens.insert(token);
 }
 template <class T>
-void operator -= (size_t token, Static_Datum<T> datum)
+void operator -= (size_t& token, Static_Datum<T>& datum)
 {// removing a token from a static datum
 	datum.tokens.erase(token);
 }
@@ -277,6 +278,41 @@ T& operator >> (size_t& token, Solitary_Datum<T>& datum)
 	return datum.data;
 }
 #pragma endregion
-#pragma endregion
+#pragma region Shared Datums
+// Shared datums are a bit weird, but not the worst to impliment.
+template<class T>
+T& operator + (size_t& token, Shared_Datum<T>& datum)
+{
+	datum.tokens[token] = ++datum.count;
+	return datum[token];
+}
+template <class T>
+size_t& operator >> (size_t& token, Shared_Datum<T>& datum)
+{
+	datum.tokens[token] = datum.count;
+	return datum.tokens[token];
+}
 
+// This is how you remove a token from the pool in the datum.
+template<class T>
+T operator - (size_t& token, Shared_Datum<T>& datum)
+{
+	T val = datum[token];
+	datum.tokens.erase[token];
+	return val;
+}
+#pragma endregion
+#pragma endregion
+#pragma region Behaviors
+template<class R, class... Args>
+void operator += (size_t& token, Behavior<R(Args...)>& behavior)
+{
+	behavior.tokens.insert(token);
+}
+template<class R, class... Args>
+void operator -= (size_t& token, Behavior<R(Args...)>& behavior)
+{
+	behavior.tokens.erse(token);
+}
+#pragma endregion
 #pragma endregion
