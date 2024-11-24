@@ -98,8 +98,14 @@ struct Solitary_Datum
 	size_t token;
 
 	Solitary_Datum(const T& idata) : data(idata) {};
-	operator T& () { return data; }
+	T& operator [] (size_t itoken)
+	{
+		static T invalid;
+		if (itoken != token) return invalid;
+		return data;
+	}
 	void operator >> (Token& itoken) { token = itoken; }
+	void operator = (T& idata) { data = idata; }
 
 };
 
@@ -123,7 +129,64 @@ struct Shared_Datum
 #pragma endregion
 
 #pragma region Behavior stuffs
-
+template<class R, class... Args>
+struct Behavior<R(Args...)>
+{
+#pragma region properties
+	std::unordered_set<size_t> tokens; // Container for the subscribed tokens.
+	std::function<R(Args...)> behavior; // the actual functor that is to be executed.
+	size_t ct = 0; // the current token. This determines the context of the functor.
+#pragma endregion
+#pragma region Core stuffs
+	Behavior<R(Args...)>(std::function<R(Args...)> ibehavior)
+		behavior(ibehavior) {}; // Constructor for ease of creation.
+	std::function<R(Args...)> operator [] (size_t token)
+	{// Here, when we access a behavior with a token, we return the behavior and update the context for the behavior to the given token.
+		if (!tokens.contains(token)) return function<R(Args...)>();
+		ct = token;
+		return behavior;
+	}
+#pragma endregion
+#pragma region Datum Stuffs
+	// Yes all four of these methods are the same, but they are kinda needed in order to handle things when using the design pattern.
+	template<class T>
+	T& operator [] (Datum<T>& datum)
+	{
+		return datum[ct];
+	}
+	template<class T>
+	T& operator [] (Static_Datum<T>& datum)
+	{
+		return datum[ct];
+	}
+	template<class T>
+	T& operator [] (Solitary_Datum<T>& datum)
+	{
+		return datum[ct];
+	}
+	template<class T>
+	T& operator [] (Shared_Datum<T>& datum)
+	{
+		return datum[ct];
+	}
+#pragma endregion
+#pragma region QOL
+	// This is to be able to do something like Behavior() and apply the behavior to every token subscribed.
+	void operator () (Args... args)
+	{
+		for (auto& token : tokens)
+		{
+			ct = token;
+			behavior(args...);
+		}
+	}
+	// this is to give the ability to do something like this: Datum[Behavior]
+	operator size_t& ()
+	{
+		return ct;
+	}
+#pragma endregion
+};
 #pragma endregion
 
 #pragma region Accessors
