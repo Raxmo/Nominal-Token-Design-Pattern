@@ -138,7 +138,7 @@ struct Behavior<R(Args...)>
 	size_t ct = 0; // the current token. This determines the context of the functor.
 #pragma endregion
 #pragma region Core stuffs
-	Behavior<R(Args...)>(std::function<R(Args...)> ibehavior)
+	Behavior<R(Args...)>(std::function<R(Args...)> ibehavior) :
 		behavior(ibehavior) {}; // Constructor for ease of creation.
 	std::function<R(Args...)> operator [] (size_t token)
 	{// Here, when we access a behavior with a token, we return the behavior and update the context for the behavior to the given token.
