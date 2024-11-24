@@ -23,15 +23,15 @@ NOTES:
 /*
 
 TODO:
-	[ ] - Token
-		[ ] - Core
-		[ ] - Extras
-	[ ] - Datum
+	[X] - Token
+		[X] - Core
+		[X] - Extras
+	[X] - Datum
 		[x] - Core
-		[ ] - Extras
-	[ ] - Behavior
-		[ ] - Core
-		[ ] - Extras
+		[X] - Extras
+	[X] - Behavior
+		[X] - Core
+		[X] - Extras
 
 */
 
@@ -304,12 +304,12 @@ T operator - (size_t& token, Shared_Datum<T>& datum)
 #pragma endregion
 #pragma endregion
 #pragma region Behaviors
-template<class R, class... Args>
+template<class R, class... Args> // Adds tokens to the Behavior
 void operator += (size_t& token, Behavior<R(Args...)>& behavior)
 {
 	behavior.tokens.insert(token);
 }
-template<class R, class... Args>
+template<class R, class... Args> // removes tokens from the behavior
 void operator -= (size_t& token, Behavior<R(Args...)>& behavior)
 {
 	behavior.tokens.erse(token);
