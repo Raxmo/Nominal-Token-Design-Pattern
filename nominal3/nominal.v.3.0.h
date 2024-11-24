@@ -104,7 +104,6 @@ struct Solitary_Datum
 		if (itoken != token) return invalid;
 		return data;
 	}
-	void operator >> (Token& itoken) { token = itoken; }
 	void operator = (T& idata) { data = idata; }
 
 };
@@ -189,6 +188,95 @@ struct Behavior<R(Args...)>
 };
 #pragma endregion
 
-#pragma region Accessors
+#pragma region Tokens
+struct Token
+{
+	size_t self;
+
+#pragma region Base
+	Token()
+	{
+		static size_t count;
+		self = ++count;
+	}
+	Token(size_t id) : self(id) {};
+#pragma endregion
+#pragma region Datum stuffs
+	// Much like the behaviors, all of the datum stuffs is the same here as well.
+	template<class T>
+	T& operator [] (Datum<T> idatum)
+	{
+		return idatum[self];
+	}
+	template<class T>
+	T& operator [] (Solitary_Datum<T> idatum)
+	{
+		return idatum[self];
+	}
+	template<class T>
+	T& operator [] (Shared_Datum<T> idatum)
+	{
+		return idatum[self];
+	}
+	template<class T>
+	T& operator [] (Static_Datum<T> idatum)
+	{
+		return idatum[self];
+	}
+#pragma endregion
+#pragma region Behavior stuffs
+	template<class R, class... Args>
+	std::function<R(Args...)> operator []
+	(Behavior<R(Args...)>& behavior)
+	{
+		return behavior[self];
+	}
+#pragma endregion
+#pragma region QOL
+	operator size_t& ()
+	{
+		return self;
+	}
+#pragma endregion
+};
+#pragma endregion
+
+#pragma region Overloads
+#pragma region Datums
+#pragma region Datum
+template<class T>
+T& operator + (size_t token, Datum<T> datum)
+{// Adding datums to tokens with: token + datum = value;
+	return datum.data[token];
+}
+template <class T>
+T operator - (size_t token, Datum<T> datum)
+{// remove datums from tokens with: optional_value = token - datum;
+	T val = datum[token];
+	datum.data.erase(token);
+	return val;
+}
+#pragma endregion
+#pragma region Static Datums
+template<class T>
+void operator += (size_t token, Static_Datum<T> datum)
+{// Adding a token to a static datum
+	datum.tokens.insert(token);
+}
+template <class T>
+void operator -= (size_t token, Static_Datum<T> datum)
+{// removing a token from a static datum
+	datum.tokens.erase(token);
+}
+#pragma endregion
+#pragma region Solitary Datum
+template <class T> // This is the way to access the token stored in the solitary datum.
+T& operator >> (size_t& token, Solitary_Datum<T>& datum)
+{
+	datum.token = token;
+	return datum.data;
+}
+#pragma endregion
+#pragma endregion
 
 #pragma endregion
