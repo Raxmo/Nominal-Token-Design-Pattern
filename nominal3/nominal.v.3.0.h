@@ -60,7 +60,7 @@ template<class T>
 struct Datum
 {
 	std::unordered_map<size_t, T> data;
-	T& operator [] (size_t token)
+	T& operator [] (const size_t& token)
 	{
 		static T invalid;
 		if (!token) return invalid;
@@ -76,7 +76,7 @@ struct Static_Datum
 {
 	T data;
 	std::unordered_set<size_t> tokens;
-	Static_Datum(T& idata) : data(idata) {};
+	Static_Datum(const T& idata) : data(idata) {};
 
 	T& operator [] (size_t token)
 	{
@@ -140,9 +140,10 @@ struct Behavior<R(Args...)>
 #pragma region Core stuffs
 	Behavior<R(Args...)>(std::function<R(Args...)> ibehavior) :
 		behavior(ibehavior) {}; // Constructor for ease of creation.
-	std::function<R(Args...)> operator [] (size_t token)
+	std::function<R(Args...)>& operator [] (const size_t& token)
 	{// Here, when we access a behavior with a token, we return the behavior and update the context for the behavior to the given token.
-		if (!tokens.contains(token)) return function<R(Args...)>();
+		std::function<R(Args...)> invalid;
+		if (!tokens.contains(token)) return invalid;
 		ct = token;
 		return behavior;
 	}
@@ -201,6 +202,8 @@ struct Token
 		self = ++count;
 	}
 	Token(size_t& id) : self(id) {};
+	~Token()
+	{}
 #pragma endregion
 #pragma region Datum stuffs
 	// Much like the behaviors, all of the datum stuffs is the same here as well.
@@ -312,7 +315,7 @@ void operator += (size_t& token, Behavior<R(Args...)>& behavior)
 template<class R, class... Args> // removes tokens from the behavior
 void operator -= (size_t& token, Behavior<R(Args...)>& behavior)
 {
-	behavior.tokens.erse(token);
+	behavior.tokens.erase(token);
 }
 #pragma endregion
 #pragma endregion
